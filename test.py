@@ -1,5 +1,5 @@
 from collections import deque
-from imutils.video import VideoStream
+from picamera2 import Picamera2
 import numpy as np
 import cv2
 import imutils
@@ -9,11 +9,23 @@ whiteUpper = (180, 30, 255)
 buffer_size = 64
 pts = deque(maxlen=buffer_size)
 
-# Start the video stream
-vs = VideoStream(src=0).start()
+#Initialize the PiCamera2
+cam = Picamera2()
+
+cam.exposure_mode = 'night'
+
+# Set preview configuration
+cam.framerate = 50
+width = 640
+height = 480
+cam.configure(cam.create_video_configuration(
+    main={"format": 'RGB888', "size": (width, height)}))
+
+# Start the preview
+cam.start()
 
 while True:
-    frame = vs.read()
+    frame = cam.capture_array()
     if frame is None:
         break
     frame = imutils.resize(frame, width=800)
@@ -47,5 +59,5 @@ while True:
         break
 
 # Release the video writer and video stream
-vs.stop()
+cam.stop()
 cv2.destroyAllWindows()
