@@ -75,6 +75,21 @@ def main():
     elif sys.platform == "win32":
         vs.stop()
 
+    for frame in frames:
+        cv2.imshow('Frame', frame)
+        key = cv2.waitKey(40) & 0xFF
+        if key == ord("q"):
+            break
+        
+    ans = input("Save to file? ")
+    if ans == 'y':
+        # Define codec and create a VideoWriter object
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter('ping_pong.avi',fourcc,20.0,(640,480))
+        for frame in frames:
+            out.write(frame)
+        out.release
+
     while True:
       for frame in frames:
         frame = imutils.resize(frame, width=800)
@@ -104,7 +119,7 @@ def main():
                 cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
             
             cv2.imshow("Frame", frame)
-            key = cv2.waitKey(1) & 0xFF
+            key = cv2.waitKey(40) & 0xFF
             if key == ord("q"):
                 break
         
