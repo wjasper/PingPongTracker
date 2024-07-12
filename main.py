@@ -52,8 +52,8 @@ def main():
   
     cv2.destroyAllWindows()
 
-    min_value = int(input("Enter the minimum value in inches: "))
-    mid_value = int(input("Enter the mid value in inches: "))
+    min_value = float(input("Enter the minimum value in inches: "))
+    mid_value = float(input("Enter the mid value in inches: "))
 
     input("Hit any key to start: ")
     frames = []
@@ -81,15 +81,11 @@ def main():
         if key == ord("q"):
             break
         
-    ans = input("Save to file? ")
-    if ans == 'y':
-        # Define codec and create a VideoWriter object
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter('ping_pong.avi',fourcc,20.0,(640,480))
-        for frame in frames:
-            out.write(frame)
-        out.release
-
+    # Define codec and create a VideoWriter object
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter('ping_pong.avi',fourcc,20.0,(640,480))
+    out_bw = cv2.VideoWriter('ping_pong_bw.avi',fourcc,20.0,(640,480))
+        
     centers = []
 
     X, Y = None, None
@@ -145,6 +141,10 @@ def main():
         cv2.imshow("Frame", frame)
         cv2.imshow("Image", img)
 
+        # write images to file        
+        out.write(frame)
+        out_bw.write(img)
+
         key = cv2.waitKey(40) & 0xFF
         if key == ord("q"):
             break
@@ -153,7 +153,9 @@ def main():
     x_inches = min_value + (mid_value - min_value)/(width/2)*X
     print("Distance in inches: ", x_inches)
 
-cv2.destroyAllWindows()
+    cv2.destroyAllWindows()
+    out.release()
+    out_bw.release()
 
 
 if __name__ == "__main__":
