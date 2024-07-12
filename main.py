@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-from collections import deque
 import numpy as np
 import cv2
-import imutils
 import sys
 import time
 
@@ -16,11 +14,12 @@ def main():
         cam = Picamera2()
 
         # Set preview configuration
-        cam.framerate = 50
+        framerate = 90
         width = 640
         height = 480
         cam.configure(cam.create_video_configuration(
             main={"format": 'RGB888', "size": (width, height)}))
+        cam.set_controls({"FrameRate": framerate})
 
         # Start the preview
         cam.start()
@@ -53,13 +52,12 @@ def main():
   
     cv2.destroyAllWindows()    
 
-    whiteLower = (0, 0, 200)
-    whiteUpper = (180, 30, 255)
-    buffer_size = 64
-    pts = deque(maxlen=buffer_size)
 
     input("Hit any key to start: ")
     frames = []
+    bg_img = cam.capture_array()
+    bg_img_bw = cv2.cvtColor(bg_img, cv2.COLOR_BGR2GRAY)
+    
     start_time = time.time()
     while time.time() - start_time < 5:
         if sys.platform == "linux" or sys.platform  == "linux2":
@@ -92,36 +90,26 @@ def main():
 
     while True:
       for frame in frames:
-        frame = imutils.resize(frame, width=800)
-        blurred = cv2.GaussianBlur(frame, (5, 5), 0)
-        hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv, whiteLower, whiteUpper)
-        mask = cv2.erode(mask, None, iterations=2)
-        mask = cv2.dilate(mask, None, iterations=2)
-        cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        cnts = imutils.grab_contours(cnts)
-        
-        for c in cnts:
-            center = None
-            if len(cnts) > 0:
-                c = max(cnts, key=cv2.contourArea)
-                ((x, y), radius) = cv2.minEnclosingCircle(c)
-                M = cv2.moments(c)
-                center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-                if radius > 5 and radius < 10:
-                    cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
-                    cv2.circle(frame, center, 5, (0, 0, 255), -1)
-            pts.appendleft(center)
-            for i in range(1, len(pts)):
-                if pts[i - 1] is None or pts[i] is None:
-                    continue
-                thickness = int(np.sqrt(buffer_size / float(i + 1)) * 2.5)
-                cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
+          gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+          img = cv2.absdiff(gray, bg_img_bw)
+          img = cv2.blur(img, (3,3))
+          ret, img = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
+          circles = cv2.HoughCircles(img, cv2.HOUGH_GRADIENT, 1, 20,
+                                     param1=50, param2=30, minRadius=0, maxRadius=0)
+          if circles is not None:
+              detected_circles = np.uint16(np.around(circles))
+              print(detected_circles)
+              for pt in detected_circles[0, :]:
+                  x, y, r = pt[0], pt[1], pt[2]
+                  cv2.circle(frame, (x, y), r, (0, 255, 0), 3)
+                  cv2.circle(frame, (x, y), 2, (0, 255, 0), 3)
+                  cv2.circle(img, (x, y), 2, (0, 255, 0), 3)
             
-            cv2.imshow("Frame", frame)
-            key = cv2.waitKey(40) & 0xFF
-            if key == ord("q"):
-                break
+          cv2.imshow("Frame", frame)
+          cv2.imshow("Image", img)
+          key = cv2.waitKey(40) & 0xFF
+          if key == ord("q"):
+              break
         
     
     cv2.destroyAllWindows()
