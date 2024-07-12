@@ -14,15 +14,17 @@ def main():
         cam = Picamera2()
 
         # Set preview configuration
-        framerate = 90
+        framerate = 80
         width = 640
         height = 480
         cam.configure(cam.create_video_configuration(
-            main={"format": 'RGB888', "size": (width, height)}))
-        cam.set_controls({"FrameRate": framerate})
-
+            {"format": 'RGB888', "size": (width, height)},
+            controls={"FrameRate": framerate}))
         # Start the preview
         cam.start()
+        metadata = cam.capture_metadata()
+        print("framerate = ", metadata)
+
     elif sys.platform == "win32":
         from imutils.video import VideoStream
         # Start the video stream
