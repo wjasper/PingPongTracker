@@ -21,10 +21,8 @@ while True:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         img = cv2.absdiff(gray, bg_img_bw)
         img = cv2.blur(img, (3,3))
-        ret, img = cv2.threshold(img, 25, 255, cv2.THRESH_BINARY)
-        
-        cv2.line(img, (0, 200), (img.shape[1], 200), (255, 0, 0), 2)
-        
+        ret, img = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
+            
         cv2.imshow("Frame", frame)
         cv2.imshow("Image", img)
         
