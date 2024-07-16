@@ -148,10 +148,13 @@ def main():
         key = cv2.waitKey(40) & 0xFF
         if key == ord("q"):
             break
-    
-    print("Found them:", X, Y)
-    x_inches = min_value + (mid_value - min_value)/(width/2)*X
-    print("Distance in inches: ", x_inches)
+
+    if X == None and Y == None:
+        print("Was not able to track the ping pong ball.  Try moving the sensor further away from the target")        
+    else:
+        print("Found them:", X, Y)
+        x_inches = min_value + (mid_value - min_value)/(width/2)*X
+        print("Distance in inches: ", x_inches)
 
     cv2.destroyAllWindows()
     out.release()
