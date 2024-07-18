@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from collections import deque
 from picamera2 import Picamera2
 import numpy as np
@@ -11,15 +13,18 @@ pts = deque(maxlen=buffer_size)
 
 #Initialize the PiCamera2
 cam = Picamera2()
-
 cam.exposure_mode = 'night'
 
 # Set preview configuration
-cam.framerate = 50
+cam.framerate = 80
 width = 640
 height = 480
-cam.configure(cam.create_video_configuration(
-    main={"format": 'RGB888', "size": (width, height)}))
+
+main = {'size': (width, height), 'format': 'RGB888'}
+controls = {'FrameRate': 80}
+sensor = {'bit_depth': 10, 'output_size': (640,480)}
+video_config = cam.create_video_configuration(main, controls=controls, sensor=sensor)
+cam.configure(video_config)
 
 # Start the preview
 cam.start()

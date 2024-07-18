@@ -14,12 +14,15 @@ def main():
         cam = Picamera2()
 
         # Set preview configuration
-        framerate = 80
+        framerate = 90
         width = 640
         height = 480
-        cam.configure(cam.create_video_configuration(
-            {"format": 'RGB888', "size": (width, height)},
-            controls={"FrameRate": framerate}))
+        main = {'size': (width, height), 'format': 'RGB888'}
+        controls = {'FrameRate': framerate}
+        sensor = {'bit_depth': 10, 'output_size': (640,480)}
+        video_config = cam.create_video_configuration(main, controls=controls, sensor=sensor)
+        cam.configure(video_config)
+
         # Start the preview
         cam.start()
 
