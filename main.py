@@ -25,10 +25,10 @@ def main():
         cam.configure(video_config)
 
         # Print the current configuration settings:
-        current_config = cam.camera_controls
-        print("Current Configuration Settings:")
-        for key, value in current_config.items():
-            print(f"{key}: {value}")
+#        current_config = cam.camera_controls
+#        print("Current Configuration Settings:")
+#        for key, value in current_config.items():
+#            print(f"{key}: {value}")
 
         # Start the preview
         cam.start()
@@ -41,6 +41,22 @@ def main():
         print("OS not supported.")
         sys.exit()
 
+    # Start timing measurements
+    start_time = time.time()
+    for frame_count in range(1, 1000):
+        if sys.platform == "linux" or sys.platform == "linux2":
+            frame = cam.capture_array()
+        else:
+            frame = vs.read()
+          
+        if frame is None:
+            break
+
+        if frame_count % 100 == 0:
+          end_time = time.time()
+          elapsed_time = end_time - start_time
+          print("frames per second: ", int(frame_count/elapsed_time))
+        
     # Start Calibration:
     while True:
         if sys.platform == "linux" or sys.platform == "linux2":
