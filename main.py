@@ -17,11 +17,18 @@ def main():
         framerate = 90
         width = 640
         height = 480
+
         main = {'size': (width, height), 'format': 'RGB888'}
         controls = {'FrameRate': framerate}
         sensor = {'bit_depth': 10, 'output_size': (640,480)}
         video_config = cam.create_video_configuration(main, controls=controls, sensor=sensor)
         cam.configure(video_config)
+
+        # Print the current configuration settings:
+        current_config = cam.camera_controls
+        print("Current Configuration Settings:")
+        for key, value in current_config.items():
+            print(f"{key}: {value}")
 
         # Start the preview
         cam.start()
@@ -58,8 +65,10 @@ def main():
     min_value = float(input("Enter the minimum value in inches: "))
     mid_value = float(input("Enter the mid value in inches: "))
 
-    input("Hit any key to start: ")
+    input("Hit any key to start. Sampling will stop in 5 seconds. ")
     frames = []
+
+    # Store the background image
     bg_img = cam.capture_array()
     bg_img_bw = cv2.cvtColor(bg_img, cv2.COLOR_BGR2GRAY)
     
@@ -86,8 +95,8 @@ def main():
         
     # Define codec and create a VideoWriter object
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter('ping_pong.avi',fourcc,20.0,(640,480))
-    out_bw = cv2.VideoWriter('ping_pong_bw.avi',fourcc,20.0,(640,480))
+    out = cv2.VideoWriter('ping_pong.avi',fourcc,framerate,(width,height))
+    out_bw = cv2.VideoWriter('ping_pong_bw.avi',fourcc,framerate,(width,height),0)
         
     centers = []
 
@@ -99,7 +108,7 @@ def main():
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         img = cv2.absdiff(gray, bg_img_bw)
         img = cv2.blur(img, (3, 3))
-        ret, img = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
+        ret, img = cv2.threshold(img, 40, 255, cv2.THRESH_BINARY)
 
         contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -136,7 +145,8 @@ def main():
                             y_prev = cy
                             x_prev = cx
                     
-                        #Y is decreasing and X and Y both are not been found yet
+                        # Y is decreasing and X and Y both are not been found yet
+                        # store values for first minimum in Y
                         elif cy < y_prev and X is None and Y is None:
                             X = x_prev
                             Y = y_prev
@@ -153,7 +163,8 @@ def main():
             break
 
     if X == None and Y == None:
-        print("Was not able to track the ping pong ball.  Try moving the sensor further away from the target")        
+        print("Was not able to track the ping pong ball.  Try moving the sensor further away from the target")
+        print("increasing the lighting or lowering the threshold.")
     else:
         print("Found them:", X, Y)
         x_inches = min_value + (mid_value - min_value)/(width/2)*X
