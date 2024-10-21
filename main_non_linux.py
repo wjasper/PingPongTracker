@@ -1,118 +1,94 @@
-#!/usr/bin/env python3
-
 import numpy as np
 import cv2
 import sys
 import time
-import libcamera
-from picamera2 import Picamera2
+import platform
 
-def toContinue():
+def to_continue():
   answer = input('Start sampling for 5 seconds [y/n]: ')
   if (answer == 'y' or answer == 'Y' or len(answer) == 0):
     return True
   else:
     return False
 
-def main():
 
-    # Initialize the PiCamera2
-    cam = Picamera2()
 
-    # Set preview configuration
-    framerate = 90
-    width = 640
-    height = 480
+def calibration():
+    """
+    The objective of this function is to access the camera of the device,
+    Create a calibration frame,
+    And return the frame values.
+    """
+    # Initialize the camera using OpenCV
+    cap = cv2.VideoCapture(0)  # 0 for the default camera
 
-    main = {'size': (width, height), 'format': 'RGB888'}
-    controls = {'FrameRate': framerate}
-    sensor = {'bit_depth': 10, 'output_size': (640,480)}
-    video_config = cam.create_video_configuration(main, controls=controls, sensor=sensor)
-    cam.configure(video_config)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    cap.set(cv2.CAP_PROP_FPS, framerate)
 
-    # Print the current configuration settings:
-#        current_config = cam.camera_controls
-#        print("Current Configuration Settings:")
-#        for key, value in current_config.items():
-#            print(f"{key}: {value}")
 
-    # Start the preview
-    cam.start()
-
-    # Start timing measurements
-    start_time = time.time()
-    for frame_count in range(1, 1000):
-        if sys.platform == "linux" or sys.platform == "linux2":
-            frame = cam.capture_array()
-        else:
-            frame = vs.read()
-          
-        if frame is None:
-            break
-
-        if frame_count % 100 == 0:
-          end_time = time.time()
-          elapsed_time = end_time - start_time
-          print("frames per second: ", int(frame_count/elapsed_time))
-        
     # Start Calibration:
     while True:
-        frame = cam.capture_array()
-              
-        if frame is None:
+        ret, frame = cap.read()  # Capture frame from the camera
+        if not ret:
             break
-    
+
         # Draw calibration lines
         cv2.line(frame, (0, 0), (0, 480), (0, 0, 255), 3)       # Red line at beginning
         cv2.line(frame, (320, 0), (320, 480), (0, 255, 0), 3)   # Green line in middle
         cv2.line(frame, (640, 0), (640, 480), (255, 0, 0), 3)   # Blue line at end
         cv2.imshow("Calibration", frame)
+
         key = cv2.waitKey(40) & 0xFF
         if key == ord("q"):
             break
-  
+
     cv2.destroyAllWindows()
 
-    # Stop the camera
-    cam.stop()
-
+    # Release the camera
+    cap.release()
+    
     min_value = float(input("Enter the minimum value in inches: "))
     mid_value = float(input("Enter the mid value in inches: "))
+    
+    return min_value, mid_value
+   
 
-    while toContinue():
-
-        # Start the camera
-        cam.start()
+def shoot_video(min_value, mid_value):
+    
+    
+    while to_continue():
+        
+        # Initialize the camera using OpenCV
+        cap = cv2.VideoCapture(0)  # 0 for the default camera
+    
 
         frames = []
 
         # Store the background image
-        bg_img = cam.capture_array()
-        bg_img_bw = cv2.cvtColor(bg_img, cv2.COLOR_BGR2GRAY)
+        # Store the background image
+        ret, bg_img = cap.read()
     
-        start_time = time.time()
-        # capture images in real time ~ 90fps
-        while time.time() - start_time < 5:
-          frame = cam.capture_array()
-          frames.append(frame)
-
-        for frame in frames:
-            cv2.imshow('Frame', frame)
-            key = cv2.waitKey(40) & 0xFF
-            if key == ord("q"):
+        if not ret:
+                print("Failed to grab background frame")
                 break
-        
-        # Define codec and create a VideoWriter object
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter('ping_pong.avi',fourcc,framerate,(width,height))
-        out_bw = cv2.VideoWriter('ping_pong_bw.avi',fourcc,framerate,(width,height),0)
+        bg_img_bw = cv2.cvtColor(bg_img, cv2.COLOR_BGR2GRAY)
+            
+        start_time = time.time()
+        # Capture images in real time (~90fps)
+        while time.time() - start_time < 5:
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to grab frame")
+                break
+            frames.append(frame)
         
         centers = []
 
         X, Y = None, None
         y_prev = None
         x_prev = None
-
+        
         for frame in frames:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             img = cv2.absdiff(gray, bg_img_bw)
@@ -162,6 +138,11 @@ def main():
                             
             cv2.imshow("Frame", frame)
             cv2.imshow("Image", img)
+            
+           # Define codec and create a VideoWriter object
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            out = cv2.VideoWriter('ping_pong.avi',fourcc,framerate,(width,height))
+            out_bw = cv2.VideoWriter('ping_pong_bw.avi',fourcc,framerate,(width,height),0)
 
             # write images to file        
             out.write(frame)
@@ -170,20 +151,39 @@ def main():
             key = cv2.waitKey(40) & 0xFF
             if key == ord("q"):
                 break
-
-        if X == None and Y == None:
-            print("Was not able to track the ping pong ball.  Try moving the sensor further away from the target")
-            print("increasing the lighting or lowering the threshold.")
+        if X is None and Y is None:
+                print("Was not able to track the ping pong ball. Try adjusting the sensor.")
         else:
             print("Found them:", X, Y)
-            x_inches = min_value + (mid_value - min_value)/(width/2)*X
-            print("Distance in inches: ", x_inches)
+            x_inches = min_value + (mid_value - min_value) / (width / 2) * X
+            print("Distance in inches:", x_inches)
 
-        cam.stop()
+        # Clean up after processing
         cv2.destroyAllWindows()
         out.release()
         out_bw.release()
+        cap.release()
+
+
+
+  
+# Set camera properties
+framerate = 90
+width = 640
+height = 480  
+
+def main():
+
+    min_value, mid_value = calibration()
+    shoot_video(min_value, mid_value)
+    #Function to shoot the video
+    
+
+
 
 if __name__ == "__main__":
-    main()
-    
+    if platform.system() != "Linux":
+        # OS is windows/Linux program executed using OpenCV
+        main()
+    else:
+        print("OS not compatible")

@@ -1,60 +1,35 @@
-#!/usr/bin/env python3
-
 import numpy as np
 import cv2
 import sys
 import time
+import platform
 import libcamera
 from picamera2 import Picamera2
 
-def toContinue():
+def to_continue():
   answer = input('Start sampling for 5 seconds [y/n]: ')
   if (answer == 'y' or answer == 'Y' or len(answer) == 0):
     return True
   else:
     return False
 
-def main():
 
-    # Initialize the PiCamera2
-    cam = Picamera2()
-
-    # Set preview configuration
-    framerate = 90
-    width = 640
-    height = 480
-
+def calibration(cam):
+    """
+    The objective of this function is to access the camera of the device,
+    Create a calibration frame,
+    And return the frame values.
+    """
+    
     main = {'size': (width, height), 'format': 'RGB888'}
     controls = {'FrameRate': framerate}
     sensor = {'bit_depth': 10, 'output_size': (640,480)}
     video_config = cam.create_video_configuration(main, controls=controls, sensor=sensor)
     cam.configure(video_config)
-
-    # Print the current configuration settings:
-#        current_config = cam.camera_controls
-#        print("Current Configuration Settings:")
-#        for key, value in current_config.items():
-#            print(f"{key}: {value}")
-
+    
     # Start the preview
     cam.start()
 
-    # Start timing measurements
-    start_time = time.time()
-    for frame_count in range(1, 1000):
-        if sys.platform == "linux" or sys.platform == "linux2":
-            frame = cam.capture_array()
-        else:
-            frame = vs.read()
-          
-        if frame is None:
-            break
-
-        if frame_count % 100 == 0:
-          end_time = time.time()
-          elapsed_time = end_time - start_time
-          print("frames per second: ", int(frame_count/elapsed_time))
-        
     # Start Calibration:
     while True:
         frame = cam.capture_array()
@@ -79,7 +54,11 @@ def main():
     min_value = float(input("Enter the minimum value in inches: "))
     mid_value = float(input("Enter the mid value in inches: "))
 
-    while toContinue():
+    return min_value, mid_value
+   
+
+def shoot_video(cam, min_value, mid_value):
+     while to_continue():
 
         # Start the camera
         cam.start()
@@ -93,8 +72,8 @@ def main():
         start_time = time.time()
         # capture images in real time ~ 90fps
         while time.time() - start_time < 5:
-          frame = cam.capture_array()
-          frames.append(frame)
+            frame = cam.capture_array()
+            frames.append(frame)
 
         for frame in frames:
             cv2.imshow('Frame', frame)
@@ -102,10 +81,7 @@ def main():
             if key == ord("q"):
                 break
         
-        # Define codec and create a VideoWriter object
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter('ping_pong.avi',fourcc,framerate,(width,height))
-        out_bw = cv2.VideoWriter('ping_pong_bw.avi',fourcc,framerate,(width,height),0)
+
         
         centers = []
 
@@ -162,6 +138,11 @@ def main():
                             
             cv2.imshow("Frame", frame)
             cv2.imshow("Image", img)
+            
+           # Define codec and create a VideoWriter object
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            out = cv2.VideoWriter('ping_pong.avi',fourcc,framerate,(width,height))
+            out_bw = cv2.VideoWriter('ping_pong_bw.avi',fourcc,framerate,(width,height),0)
 
             # write images to file        
             out.write(frame)
@@ -184,6 +165,22 @@ def main():
         out.release()
         out_bw.release()
 
-if __name__ == "__main__":
-    main()
     
+def main():
+    # Initialize the PiCamera2
+    cam = Picamera2()
+    min_value, mid_value = calibration(cam)
+    shoot_video(cam, min_value, mid_value)
+    #Function to shoot the video
+    
+    
+# Set camera properties
+framerate = 90
+width = 640
+height = 480
+
+if __name__ == "__main__":
+    if platform.system() == "Linux":
+        main()
+    else:
+        print("OS not compatible")
