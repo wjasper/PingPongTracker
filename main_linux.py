@@ -89,7 +89,14 @@ def shoot_video(cam, min_value, mid_value):
         y_prev = None
         x_prev = None
 
+        # Define codec and create a VideoWriter object
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        inp =  cv2.VideoWriter('output/ping_pong_raw_input.avi',fourcc,framerate,(width,height))
+        out = cv2.VideoWriter('output/ping_pong_with_detection.avi',fourcc,framerate,(width,height))
+        out_bw = cv2.VideoWriter('output/ping_pong_bw_with_detection.avi',fourcc,framerate,(width,height))
+
         for frame in frames:
+            og_frame = frame.copy()
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             img = cv2.absdiff(gray, bg_img_bw)
             img = cv2.blur(img, (3, 3))
@@ -138,13 +145,10 @@ def shoot_video(cam, min_value, mid_value):
                             
             cv2.imshow("Frame", frame)
             cv2.imshow("Image", img)
-            
-           # Define codec and create a VideoWriter object
-            fourcc = cv2.VideoWriter_fourcc(*'XVID')
-            out = cv2.VideoWriter('ping_pong.avi',fourcc,framerate,(width,height))
-            out_bw = cv2.VideoWriter('ping_pong_bw.avi',fourcc,framerate,(width,height),0)
+            cv2.imshow("Raw", og_frame)
 
-            # write images to file        
+            # write images to file  
+            inp.write(og_frame)      
             out.write(frame)
             out_bw.write(img)
 
@@ -162,6 +166,7 @@ def shoot_video(cam, min_value, mid_value):
 
         cam.stop()
         cv2.destroyAllWindows()
+        inp.release() 
         out.release()
         out_bw.release()
 
