@@ -16,9 +16,10 @@ def to_continue():
 def calibration():
     """
     The objective of this function is to access the camera of the device,
-    Create a calibration frame,
-    And return the frame values.
+    Create a calibration window,
+    And return the minimum and middle values in inches
     """
+    
     # Initialize the camera using OpenCV
     cap = cv2.VideoCapture(0)  # 0 for the default camera
 
@@ -56,7 +57,6 @@ def calibration():
 
 def shoot_video(min_value, mid_value):
     
-    
     while to_continue():
         
         # Initialize the camera using OpenCV
@@ -65,7 +65,6 @@ def shoot_video(min_value, mid_value):
 
         frames = []
 
-        # Store the background image
         # Store the background image
         ret, bg_img = cap.read()
     
@@ -148,7 +147,6 @@ def shoot_video(min_value, mid_value):
             cv2.imshow("Image", img)
             cv2.imshow("Raw", og_frame)
 
-           
             # write images to file  
             inp.write(og_frame)      
             out.write(frame)
@@ -180,10 +178,10 @@ width = 640
 height = 480  
 
 def main():
-
+    #Calibration function
     min_value, mid_value = calibration()
-    shoot_video(min_value, mid_value)
     #Function to shoot the video
+    shoot_video(min_value, mid_value)
     
 
 

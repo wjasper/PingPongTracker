@@ -17,8 +17,8 @@ def to_continue():
 def calibration(cam):
     """
     The objective of this function is to access the camera of the device,
-    Create a calibration frame,
-    And return the frame values.
+    Create a calibration window,
+    And return the minimum and middle values in inches
     """
     
     main = {'size': (width, height), 'format': 'RGB888'}
@@ -70,6 +70,7 @@ def shoot_video(cam, min_value, mid_value):
         bg_img_bw = cv2.cvtColor(bg_img, cv2.COLOR_BGR2GRAY)
     
         start_time = time.time()
+        
         # capture images in real time ~ 90fps
         while time.time() - start_time < 5:
             frame = cam.capture_array()
@@ -80,8 +81,6 @@ def shoot_video(cam, min_value, mid_value):
             key = cv2.waitKey(40) & 0xFF
             if key == ord("q"):
                 break
-        
-
         
         centers = []
 
@@ -175,8 +174,8 @@ def main():
     # Initialize the PiCamera2
     cam = Picamera2()
     min_value, mid_value = calibration(cam)
-    shoot_video(cam, min_value, mid_value)
     #Function to shoot the video
+    shoot_video(cam, min_value, mid_value)
     
     
 # Set camera properties
