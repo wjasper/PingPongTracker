@@ -1,7 +1,16 @@
+#IMPORTS
 import cv2
 import numpy as np
 
-video_path = 'ping_pong.avi'
+"""
+Post-processing logic, first we just got the video saved it,
+and later wrote the logic to track the ball and calculate the distance.
+
+Decided to do this, so we don't have to conduct the experiment again and again.
+After this logic is completed it later can be included in main.py/main_linux.py/main_non_linux.py
+"""
+
+video_path = 'demo_output/ping_pong.avi'
 cap = cv2.VideoCapture(video_path)
 frames = []
 
@@ -13,7 +22,9 @@ while True:
 
 cap.release()
 
+#get the base frame to later compare with 
 bg_img = frames[0] if frames else None
+#convert the frame to b&w, reducing computational work 
 bg_img_bw = cv2.cvtColor(bg_img, cv2.COLOR_BGR2GRAY)
 
 centers = []
@@ -23,17 +34,22 @@ y_prev = None
 x_prev = None
 
 for frame in frames:
+    #convert the current frame to b&w, reducing computational work
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    #taking absolute difference between the first converted b&w frame with the current frame
     img = cv2.absdiff(gray, bg_img_bw)
     img = cv2.blur(img, (3, 3))
     ret, img = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
 
+    #draw contours around the differences
     contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+    #find the area of all the contours
     for contour in contours:
         area = cv2.contourArea(contour)
         min_area = 100
         
+        #draw a circle/track the deformed shape, only if its area and aspect_ratio > threshold
         if area > min_area:
             x, y, w, h = cv2.boundingRect(contour)
             aspect_ratio = float(w) / h
@@ -48,7 +64,6 @@ for frame in frames:
                     cy = int(M["m01"] / M["m00"])
                     centers.append((cx, cy))
                     
-
                     cv2.circle(frame, (cx, cy), 5, (0, 255, 0), -1)
                     
                     print(cx, cy)
@@ -78,4 +93,5 @@ for frame in frames:
 
 cv2.destroyAllWindows()
 
+#return the coordinates of circle, after its first point of contact with the ground.
 print("Found them:", X, Y)
