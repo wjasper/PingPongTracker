@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 #IMPORTS
 import numpy as np
 import cv2
@@ -81,6 +83,10 @@ def calibration(cam):
           end_time = time.time()
           elapsed_time = end_time - start_time
           print("frames per second: ", int(frame_count/elapsed_time))
+
+    print("Determine minimum value (cm or inches) at red line.")
+    print("Determine middle value (cm or inches) at green line.")
+    print("Hit 'q' in the calibration window when done")
 
     # Start Calibration:
     while True:
