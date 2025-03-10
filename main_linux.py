@@ -84,9 +84,9 @@ def calibration(cam):
           elapsed_time = end_time - start_time
           print("frames per second: ", int(frame_count/elapsed_time))
 
-    print("Determine minimum value (cm or inches) at red line.")
-    print("Determine middle value (cm or inches) at green line.")
-    print("Hit 'q' in the calibration window when done")
+    print("\n\nDetermine minimum value (cm or inches) at the red line.")
+    print("Determine middle value (cm or inches) at the green line.")
+    print("Hit 'q' in the calibration window when done.\n\n")
 
     # Start Calibration:
     while True:
